@@ -46,10 +46,9 @@ int phase = 0;
 
 void colorTileDark();
 
+void printTileData();
 void printMines();
-
 void printNumbers();
-
 void printVisits();
 
 int main()
@@ -186,6 +185,10 @@ void assignNumbers() {
             if (getCursorData() == 1) {
                 int rowspace = 1;
                 int colspace = 1;
+                
+                //for returning to mine
+                int savec = cursorcol;
+                int saver = cursorrow;
 
                 //check for edges
                 if (cursorrow != 0) {
@@ -211,6 +214,9 @@ void assignNumbers() {
                         if (getCursorData() == 0) {
                             modifyCursorData(5);
                         }
+                        /*if (getCursorData() >= 5) {
+                            modifyCursorData(getCursorData()+1);
+                        }*/
                         moveRight();
                     }
                     moveDown();
@@ -218,6 +224,8 @@ void assignNumbers() {
                 }
 
                 //return cursor to current mine
+                cursorcol = savec;
+                cursorrow = saver;
             }
             moveRight();
         }
@@ -256,13 +264,13 @@ void gameInputs() {
                 inputFlag();
                 break;
             case 'r':
-                printMines(); //for debugging and cheating
+                printMines(); //debugging
                 break;
             case 't':
-                printNumbers(); //for debugging and cheating
+                printNumbers(); //debugging
                 break;
             case 'y':
-                printVisits(); //for debugging
+                printTileData(); //debugging
                 break;
             default:
                 break;
@@ -291,7 +299,7 @@ void inputEnter() {
         printf("\033[31m \033[1D");
         break;
     case 3: //has mine and flag
-        printf("\033[31m \033[1D");
+        printf("\033[30;47m\033[%d;16H HONESTLY QUITE INCREDIBLE", size + 4); //print death
         break;
     default:
         break;
@@ -317,7 +325,17 @@ void inputFlag() {
         printf("\033[31m \033[1D");
         modifyCursorData(1);
         break;
+    case 4:
+        break;
     default:
+        if (getCursorData() < 13) {
+            printf("\033[31mF\033[1D");
+            modifyCursorData(getCursorData() * 3);
+        }
+        else {
+            printf("\033[31m \033[1D");
+            modifyCursorData(getCursorData() / 3);
+        }
         break;
     }
 }
@@ -383,7 +401,7 @@ int revealAdjacent() { //this needs to use recursion I think :D
     //    firstrec = 1;
     //}
 
-    if (getCursorData() != 0 || getClearVisit() != 0) {
+    if (getCursorData() != 0 || getCursorData() == 5 || getClearVisit() != 0) {
         //printf("saasdidhsgjkidfhjgnlkmaaaaaaa"); //debug
         //while(1){}
 
@@ -549,6 +567,26 @@ void colorTileDark() {
     printf("\033[1D\033[30;100m[ ]\033[2D\033[47m");
 }
 
+void printTileData() {
+    int savecol = cursorcol;
+    int saverow = cursorrow;
+
+    cursorcol, cursorrow = 0;
+
+    for (int i = 0; i < size; ++i) {
+        for (int j = 0; j < size; ++j) {
+            printf("\033[%d;%dH[%d]", i + 1, j * 3 + 1, getCursorData());
+            moveRight();
+        }
+        moveDown();
+        cursorcol = 0;
+    }
+
+    cursorcol = savecol;
+    cursorrow = saverow;
+    printf("\033[%d;%dH", 1 + cursorrow, 2 + cursorcol * 3);
+}
+
 void printMines() {
     counter = 0;
     for (int i = 0; i < size; ++i) {
@@ -564,10 +602,13 @@ void printMines() {
 }
 
 void printNumbers() {
+    int savecol = cursorcol;
+    int saverow = cursorrow;
+
     counter = 0;
     for (int i = 0; i < size; ++i) {
         for (int j = 0; j < size; ++j) {
-            if (gridArr[counter] == 5) {
+            if (gridArr[counter] >= 5) {
                 printf("\033[%d;%dH[A]", i + 1, j * 3 + 1);
             }
             counter++;
@@ -575,6 +616,10 @@ void printNumbers() {
         printf("\n");
     }
     printf("\033[%d;%dH", 1 + cursorrow, 2 + cursorcol * 3); //cursor to where it was
+
+    cursorcol = savecol;
+    cursorrow = saverow;
+    printf("\033[%d;%dH", 1 + cursorrow, 2 + cursorcol * 3);
 }
 
 void printVisits() {
