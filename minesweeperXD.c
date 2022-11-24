@@ -8,6 +8,7 @@
 #include <unistd.h>
 #endif
 int pollingDelay = 8;
+int trollingDelay = 16;
 
 void askSize();
 int size = 0;
@@ -45,6 +46,8 @@ int firstrec = 0;
 int phase = 0;
 
 void colorTileDark();
+
+void gameDefeat();
 
 void printTileData();
 void printMines();
@@ -122,39 +125,6 @@ void initGrid() {
     }
 
     assignNumbers();
-    ////check how many nearby mines each tile has
-    //counter = 0;
-    //for (int i = 0; i < size; i++)
-    //{
-    //    for (int j = 0; j < size; j++)
-    //    {
-    //        //
-    //        if (gridArr[counter] == 1) {
-
-    //            int asd = cursorcol + size * cursorrow;
-
-    //            //assignNumbers();
-    //        }
-    //        counter++;
-    //        //
-    //    }
-    //}
-
-    //test print
-    /*counter = 0;
-    for (int i = 0; i < size; ++i) {
-        for (int j = 0; j < size; ++j) {
-            printf("%d ", gridArr[counter]);
-            counter++;
-        }
-        printf("\n");
-    } */
-
-    //#ifdef _WIN32
-    //    Sleep(pollingDelay);
-    //#else
-    //    usleep(pollingDelay * 1000);
-    //#endif
 
     printf("\033[2J"); //erase screen
     printf("\033[H"); //cursor to topleft
@@ -178,7 +148,8 @@ void assignNumbers() {
     int savecol = cursorcol;
     int saverow = cursorrow;
 
-    cursorcol, cursorrow = 0;
+    cursorcol = 0;
+    cursorrow = 0;
 
     for (int i = 0; i < size; ++i) {
         for (int j = 0; j < size; ++j) {
@@ -214,9 +185,9 @@ void assignNumbers() {
                         if (getCursorData() == 0) {
                             modifyCursorData(5);
                         }
-                        /*if (getCursorData() >= 5) {
-                            modifyCursorData(getCursorData()+1);
-                        }*/
+                        else if (getCursorData() == 5) {
+                            modifyCursorData(getCursorData() + 1);
+                        }
                         moveRight();
                     }
                     moveDown();
@@ -272,6 +243,9 @@ void gameInputs() {
             case 'y':
                 printTileData(); //debugging
                 break;
+            case 'g':
+                printf("\033[30m%d\033[1D", getCursorData());
+                break;
             default:
                 break;
             }
@@ -292,21 +266,20 @@ void inputEnter() {
         revealAdjacent();
         break;
     case 1: //has mine
-        printMines();
-        printf("\033[30;47m\033[%d;16H HONESTLY QUITE INCREDIBLE", size + 4); //print death
+        gameDefeat();
         break;
     case 2: //clear and has flag
         printf("\033[31m \033[1D");
         break;
     case 3: //has mine and flag
-        printf("\033[30;47m\033[%d;16H HONESTLY QUITE INCREDIBLE", size + 4); //print death
+        gameDefeat();
         break;
     default:
         break;
     }
 }
 
-void inputFlag() { //FIXME top and bottom room data seems to move when inputting flags on, for example, 2nd row
+void inputFlag() {
     switch (getCursorData())
     {
     case 0: //clear
@@ -567,11 +540,30 @@ void colorTileDark() {
     printf("\033[1D\033[30;100m[ ]\033[2D\033[47m");
 }
 
+void gameDefeat() {
+    printMines();
+    while (1) {
+        printf("\033[30;47m\033[%d;16H HONESTLY QUITE INCREDIBLE ", size + 4);
+#ifdef _WIN32
+        Sleep(trollingDelay);
+#else
+        usleep(trollingDelay * 1000);
+#endif
+        printf("\033[30;40m\033[%d;16H HONESTLY QUITE INCREDIBLE ", size + 4);
+#ifdef _WIN32
+        Sleep(trollingDelay);
+#else
+        usleep(trollingDelay * 1000);
+#endif
+    }
+}
+
 void printTileData() {
     int savecol = cursorcol;
     int saverow = cursorrow;
 
-    cursorcol, cursorrow = 0;
+    cursorcol = 0;
+    cursorrow = 0;
 
     for (int i = 0; i < size; ++i) {
         for (int j = 0; j < size; ++j) {
