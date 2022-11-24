@@ -185,7 +185,7 @@ void assignNumbers() {
                         if (getCursorData() == 0) {
                             modifyCursorData(5);
                         }
-                        else if (getCursorData() == 5) {
+                        else if (getCursorData() >= 5) {
                             modifyCursorData(getCursorData() + 1);
                         }
                         moveRight();
