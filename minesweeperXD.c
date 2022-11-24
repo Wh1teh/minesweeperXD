@@ -306,7 +306,7 @@ void inputEnter() {
     }
 }
 
-void inputFlag() {
+void inputFlag() { //FIXME top and bottom room data seems to move when inputting flags on, for example, 2nd row
     switch (getCursorData())
     {
     case 0: //clear
