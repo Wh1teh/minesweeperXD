@@ -45,6 +45,8 @@ int* visited;
 int firstrec = 0;
 int phase = 0;
 
+void revealNumber();
+
 void colorTileDark();
 
 void gameDefeat();
@@ -129,7 +131,8 @@ void initGrid() {
     printf("\033[2J"); //erase screen
     printf("\033[H"); //cursor to topleft
 
-    printf("\033[30;47m");
+    //\033[text  \033[background
+    printf("\033[30\033[48;5;255m");
 
     //prints the grid
     for (int i = 0; i < size; ++i) {
@@ -274,7 +277,10 @@ void inputEnter() {
     case 3: //has mine and flag
         gameDefeat();
         break;
+    case 4:
+        break;
     default:
+        revealNumber();
         break;
     }
 }
@@ -536,8 +542,55 @@ int revealAdjacent() { //this needs to use recursion I think :D
     return 0;
 }
 
+void revealNumber() {
+    if (getCursorData() >= 15) { //has mine nearby and is flagged
+        modifyCursorData(getCursorData() / 3);
+    }
+    int realvalue = getCursorData() - 4;
+
+    int colorvalue = 0;
+    switch (realvalue)
+    {
+    case 1:
+        colorvalue = 94;
+        break;
+    case 2:
+        colorvalue = 32;
+        break;
+    case 3:
+        colorvalue = 91;
+        break;
+    case 4:
+        colorvalue = 34;
+        break;
+    case 5:
+        colorvalue = 31;
+        break;
+    case 6:
+        colorvalue = 36;
+        break;
+    case 7:
+        colorvalue = 30;
+        break;
+    case 8:
+        colorvalue = 37;
+        break;
+    default:
+        break;
+    }
+
+    colorTileDark();
+
+    //\033[text  \033[background
+    printf("\033[30\033[48;5;250m");
+    printf("\033[1D\033[30m[\033[1;%dm%d\033[22;30m]\033[2D\033[47m", colorvalue, realvalue); //in middle of fixing this
+    //                     ^        ^  ^           ^
+    //                     [        c  n           ]                     
+}
+
 void colorTileDark() {
-    printf("\033[1D\033[30;100m[ ]\033[2D\033[47m");
+    //printf("\033[1D\033[30;100m[ ]\033[2D\033[47m");
+    printf("\033[1D\033[48;5;250m[ ]\033[2D\033[47m");
 }
 
 void gameDefeat() {
