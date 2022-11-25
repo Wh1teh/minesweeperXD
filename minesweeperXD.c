@@ -164,20 +164,24 @@ void assignNumbers() {
                 int savec = cursorcol;
                 int saver = cursorrow;
 
+                //for if can't move right
+                int cantmove = 0;
+
                 //check for edges
+                if (cursorrow < size - 1) {
+                    rowspace++; //rows have space below
+                }
                 if (cursorrow != 0) {
                     moveUp();
                     rowspace++; //rows have space above
                 }
-                if (cursorrow < size) {
-                    rowspace++; //rows have space below
+                
+                if (cursorcol < size - 1) {
+                    colspace++; //cols have space on right
                 }
                 if (cursorcol != 0) {
                     moveLeft();
                     colspace++; //cols have space on left
-                }
-                if (cursorcol < size) {
-                    colspace++; //cols have space below
                 }
 
                 //modify tiles around the mine
@@ -191,10 +195,14 @@ void assignNumbers() {
                         else if (getCursorData() >= 5) {
                             modifyCursorData(getCursorData() + 1);
                         }
-                        moveRight();
+                        if (cursorcol < size - 1) {
+                            moveRight();
+                        }
+                        else cantmove = 1; //if cant move right have to make colspace negate one less
                     }
                     moveDown();
-                    cursorcol = cursorcol - colspace;
+                    cursorcol = cursorcol - colspace + cantmove;
+                    cantmove = 0;
                 }
 
                 //return cursor to current mine
@@ -583,7 +591,7 @@ void revealNumber() {
 
     //\033[text  \033[background
     printf("\033[30\033[48;5;250m");
-    printf("\033[1D\033[30m[\033[1;%dm%d\033[22;30m]\033[2D\033[47m", colorvalue, realvalue); //in middle of fixing this
+    printf("\033[1D\033[37m[\033[1;%dm%d\033[22;37m]\033[2D\033[47m", colorvalue, realvalue);
     //                     ^        ^  ^           ^
     //                     [        c  n           ]                     
 }
