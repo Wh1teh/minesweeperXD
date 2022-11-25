@@ -1,6 +1,7 @@
 #pragma warning(disable:4996)
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -24,9 +25,15 @@ void gameInputs();
 char action = '0';
 int cursorcol = 0;
 int cursorrow = 0;
+time_t startTime = 0;
+time_t currentTime = 0;
+
+void updateTimer();
 
 void inputEnter();
 void inputFlag();
+int flagcounter = 0;
+void updateMineIndicator();
 
 void moveUp();
 void moveDown();
@@ -56,6 +63,7 @@ void checkForVictory();
 
 void restartGame();
 int gameCleared = 0;
+void resetValues();
 
 void printTileData();
 void printMines();
@@ -64,12 +72,6 @@ void printVisits();
 
 int main()
 {
-    /*#ifdef _WIN32
-    Sleep(pollingDelay);
-    #else
-    usleep(pollingDelay*1000);
-    #endif*/
-
     while (1)
     {
         askSize();
@@ -77,7 +79,8 @@ int main()
         initGrid();
 
         gameInputs();
-        gameCleared = 0;
+
+        resetValues();
     }
 
     return 0;
@@ -97,12 +100,12 @@ void initGrid() {
     int gridSize = size * size;
     printf("grid size: %d\n", gridSize);
 
-    gridArr = calloc(gridSize, sizeof(int)); // Creating enough space for 'n' integers.
+    gridArr = calloc(gridSize, sizeof(int));
     if (gridArr == NULL) {
         printf("Unable to allocate memory\n");
     }
 
-    visited = calloc(gridSize, sizeof(int)); // Creating enough space for 'n' integers.
+    visited = calloc(gridSize, sizeof(int));
     if (visited == NULL) {
         printf("Unable to allocate memory\n");
     }
@@ -137,7 +140,9 @@ void initGrid() {
         printf("\n");
     }
 
-    printf("\033[30;47m\033[%d;8H W \033[34mE\n\033[30m\033[7GA S D \033[31mF\033[30m", size + 4); //print instructions
+    printf("\033[30;47m\033[%d;6H   W \033[34mE   \n\033[30m\033[6G A S D \033[31mF \033[30m", size + 4); //print instructions
+
+    updateMineIndicator();
 
     printf("\033[1;2H"); //cursor to first position
 }
@@ -210,6 +215,8 @@ void assignNumbers() {
 }
 
 void gameInputs() {
+    startTime = time(NULL); //game start time
+
     while (gameCleared == 0) {
         if (_kbhit()) {
             action = _getch();
@@ -234,16 +241,16 @@ void gameInputs() {
                 inputFlag();
                 break;
             case 'r':
-                printMines(); //debugging
+                //printMines(); //debugging
                 break;
             case 't':
-                printNumbers(); //debugging
+                //printNumbers(); //debugging
                 break;
             case 'y':
-                printTileData(); //debugging
+                //printTileData(); //debugging
                 break;
             case 'g':
-                printf("\033[30m%d\033[1D", getCursorData()); //print data at cursor location
+                //printf("\033[30m%d\033[1D", getCursorData()); //debugging, print data at cursor location
                 break;
             default:
                 break;
@@ -254,7 +261,17 @@ void gameInputs() {
 #else
         usleep(pollingDelay * 1000);
 #endif
+        updateTimer();
     }
+}
+
+void updateTimer() {
+    storeAndResetCursorLocation();
+
+    currentTime = time(NULL);
+    printf("\033[30;47m\033[%d;18H TIME: %ld ", size + 2, currentTime - startTime); //print time
+
+    restoreCursorLocation();
 }
 
 void inputEnter() {
@@ -270,6 +287,7 @@ void inputEnter() {
     case 2: //clear and has flag
         colorTileDark();
         modifyCursorData(41);
+        flagcounter--;
         break;
     case 3: //has mine and flag
         gameDefeat();
@@ -280,6 +298,8 @@ void inputEnter() {
         revealNumber();
         break;
     }
+
+    updateMineIndicator();
     checkForVictory();
 }
 
@@ -290,34 +310,48 @@ void inputFlag() {
     case 0: //clear
         printf("F\033[1D");
         modifyCursorData(2);
+        flagcounter++;
         break;
-    case 1: //has mine
+    case 1: //mine
         printf("F\033[1D");
         modifyCursorData(3);
+        flagcounter++;
         break;
-    case 2: //clear and has flag
+    case 2: //clear and flag
         printf(" \033[1D");
         modifyCursorData(0);
+        flagcounter--;
         break;
-    case 3: //has mine and flag
+    case 3: //mine and flag
         printf(" \033[1D");
         modifyCursorData(1);
+        flagcounter--;
         break;
     case 4:
         break;
     default:
-        if (getCursorData() < 40) {
-            if (getCursorData() < 13) {
+        if (getCursorData() < 40) { //is not a cleared tiled
+            if (getCursorData() < 13) { //number
                 printf("\033[31mF\033[1D");
                 modifyCursorData(getCursorData() * 3);
+                flagcounter++;
             }
             else {
-                printf("\033[31m \033[1D");
+                printf("\033[31m \033[1D"); //number and flag
                 modifyCursorData(getCursorData() / 3);
+                flagcounter--;
             }
         }
         break;
     }
+
+    updateMineIndicator();
+}
+
+void updateMineIndicator() {
+    storeAndResetCursorLocation();
+    printf("\033[30;47m\033[%d;6H MINES: %d ", size + 2, mines - flagcounter); //print mines - flagged tiles
+    restoreCursorLocation();
 }
 
 void moveUp() {
@@ -379,13 +413,16 @@ int getClearVisit() {
     return data;
 }
 
-int revealAdjacent() { //this needs to use recursion I think :D
+int revealAdjacent() {
     int gridSize = size * size;
 
     int savecol = cursorcol;
     int saverow = cursorrow;
 
-    if (getCursorData() != 0 || getCursorData() == 5 || getClearVisit() != 0) {
+    if (getCursorData() >= 5) { //is a number
+        revealNumber();
+    }
+    if (getCursorData() != 0 || getClearVisit() != 0) {
         return;
     }
     modifyClearVisit(1); //mark current tile as visited
@@ -450,6 +487,8 @@ void revealNumber() {
 
     if (getCursorData() >= 15) { //has mine nearby and is flagged
         modifyCursorData(getCursorData() / 3);
+        flagcounter--;
+        updateMineIndicator();
     }
     int realvalue = getCursorData() - 4;
 
@@ -579,7 +618,7 @@ void checkForVictory() {
         cursorcol = 0;
     }
 
-    printf("\033[30;47m\033[%d;16Hwinningtiles: %d, area - mines: %d ", size + 4, winningtiles, size * size - mines); //debugging
+    //printf("\033[30;47m\033[4;%dHwinningtiles: %d, area - mines: %d ", (size + 2) * 3, winningtiles, size * size - mines); //debugging
 
     restoreCursorLocation();
 
@@ -591,14 +630,20 @@ void checkForVictory() {
 
 void restartGame() {
     gameCleared = 1; //mark game as cleared to break out of gameInputs()
+}
+
+void resetValues() {
+    gameCleared = 0;
 
     //free up memory before re-init
     free(gridArr);
     free(visited);
 
+    flagcounter = 0;
+
+    printf("\033[22;0;0m"); //reset styles
     printf("\033[2J"); //erase screen
     printf("\033[H"); //cursor to topleft
-    printf("\033[22;0;0m"); //reset styles
 }
 
 void printTileData() {
