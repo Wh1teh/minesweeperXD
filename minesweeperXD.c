@@ -50,7 +50,7 @@ int getCursorData();
 void modifyClearVisit(int);
 int getClearVisit();
 
-int revealAdjacent();
+void revealAdjacent();
 
 void revealNumber();
 
@@ -413,7 +413,7 @@ int getClearVisit() {
     return data;
 }
 
-int revealAdjacent() {
+void revealAdjacent() {
     int gridSize = size * size;
 
     int savecol = cursorcol;
@@ -476,8 +476,6 @@ int revealAdjacent() {
     cursorcol = savecol;
     cursorrow = saverow;
     printf("\033[%d;%dH", 1 + cursorrow, 2 + cursorcol * 3);
-
-    return 0;
 }
 
 void revealNumber() {
