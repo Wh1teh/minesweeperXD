@@ -16,12 +16,12 @@ int mines = 0;
 
 void initGrid();
 int* gridArr;
-int counter = 0;
+int* visited;
 
 void assignNumbers();
 
 void gameInputs();
-char move = '0';
+char action = '0';
 int cursorcol = 0;
 int cursorrow = 0;
 
@@ -44,8 +44,6 @@ void modifyClearVisit(int);
 int getClearVisit();
 
 int revealAdjacent();
-int* visited;
-int firstrec = 0;
 
 void revealNumber();
 
@@ -54,7 +52,10 @@ void colorTileDark();
 void gameDefeat();
 void gameVictory();
 
-int checkForVictory();
+void checkForVictory();
+
+void restartGame();
+int gameCleared = 0;
 
 void printTileData();
 void printMines();
@@ -63,20 +64,22 @@ void printVisits();
 
 int main()
 {
-    printf("Hello World!\n");
     /*#ifdef _WIN32
     Sleep(pollingDelay);
     #else
     usleep(pollingDelay*1000);
     #endif*/
 
-    askSize();
+    while (1)
+    {
+        askSize();
 
-    initGrid();
+        initGrid();
 
-    gameInputs();
+        gameInputs();
+        gameCleared = 0;
+    }
 
-    printf("Game has shut down unexpectedly");
     return 0;
 }
 
@@ -207,11 +210,11 @@ void assignNumbers() {
 }
 
 void gameInputs() {
-    while (1) {
+    while (gameCleared == 0) {
         if (_kbhit()) {
-            move = _getch();
+            action = _getch();
 
-            switch (move) {
+            switch (action) {
             case 'w': //up
                 moveUp();
                 break;
@@ -265,7 +268,8 @@ void inputEnter() {
         gameDefeat();
         break;
     case 2: //clear and has flag
-        printf("\033[31m \033[1D");
+        colorTileDark();
+        modifyCursorData(41);
         break;
     case 3: //has mine and flag
         gameDefeat();
@@ -276,37 +280,41 @@ void inputEnter() {
         revealNumber();
         break;
     }
+    checkForVictory();
 }
 
 void inputFlag() {
+    printf("\033[48;5;255m\033[31m"); //color
     switch (getCursorData())
     {
     case 0: //clear
-        printf("\033[31mF\033[1D");
+        printf("F\033[1D");
         modifyCursorData(2);
         break;
     case 1: //has mine
-        printf("\033[31mF\033[1D");
+        printf("F\033[1D");
         modifyCursorData(3);
         break;
     case 2: //clear and has flag
-        printf("\033[31m \033[1D");
+        printf(" \033[1D");
         modifyCursorData(0);
         break;
     case 3: //has mine and flag
-        printf("\033[31m \033[1D");
+        printf(" \033[1D");
         modifyCursorData(1);
         break;
     case 4:
         break;
     default:
-        if (getCursorData() < 13) {
-            printf("\033[31mF\033[1D");
-            modifyCursorData(getCursorData() * 3);
-        }
-        else {
-            printf("\033[31m \033[1D");
-            modifyCursorData(getCursorData() / 3);
+        if (getCursorData() < 40) {
+            if (getCursorData() < 13) {
+                printf("\033[31mF\033[1D");
+                modifyCursorData(getCursorData() * 3);
+            }
+            else {
+                printf("\033[31m \033[1D");
+                modifyCursorData(getCursorData() / 3);
+            }
         }
         break;
     }
@@ -489,12 +497,17 @@ void revealNumber() {
 
 void colorTileDark() {
     //printf("\033[1D\033[30;100m[ ]\033[2D\033[47m");
-    printf("\033[1D\033[48;5;253m   \033[2D\033[47m");
+    printf("\033[1D\033[48;5;252m   \033[2D\033[47m");
 }
 
 void gameDefeat() {
     printMines();
-    while (1) {
+
+    //color death tile
+    printf("\033[1D\033[38;5;16m\033[48;5;196m[x]\033[2D\033[47m");
+
+    int waitcounter = 0;
+    while (gameCleared == 0) {
         printf("\033[30;47m\033[%d;16H HONESTLY QUITE INCREDIBLE ", size + 4);
 #ifdef _WIN32
         Sleep(trollingDelay);
@@ -507,26 +520,85 @@ void gameDefeat() {
 #else
         usleep(trollingDelay * 1000);
 #endif
+
+        if (waitcounter < 20) waitcounter++; //so it doesn't quit out almost instantly
+        if (_kbhit() && waitcounter == 20) {
+            action = _getch();
+
+            switch (action) {
+            default:
+                restartGame();
+                break;
+            }
+        }
     }
 }
 
 void gameVictory() {
+    int waitcounter = 0;
+    while (gameCleared == 0) {
+        printf("\033[30;47m\033[%d;16H SHEEEEEEEEEEEEEEEEEEEEESH ", size + 4);
+#ifdef _WIN32
+        Sleep(trollingDelay);
+#else
+        usleep(trollingDelay * 1000);
+#endif
+        printf("\033[30;40m\033[%d;16H SHEEEEEEEEEEEEEEEEEEEEESH ", size + 4);
+#ifdef _WIN32
+        Sleep(trollingDelay);
+#else
+        usleep(trollingDelay * 1000);
+#endif
 
+        if (waitcounter < 20) waitcounter++; //so it doesn't quit out almost instantly
+        if (_kbhit()) {
+            action = _getch();
+
+            switch (action) {
+            default:
+                restartGame();
+                break;
+            }
+        }
+    }
 }
 
-int checkForVictory() {
+void checkForVictory() {
     storeAndResetCursorLocation();
 
+    int winningtiles = 0;
     for (int i = 0; i < size; ++i) {
         for (int j = 0; j < size; ++j) {
-            printf("\033[30m\033[%d;%dH[%d]", i + 1, j * 3 + 1, getCursorData());
+            //if cursordata in marked tile range
+            if (getCursorData() >= 40) {
+                winningtiles++;
+            }
             moveRight();
         }
         moveDown();
         cursorcol = 0;
     }
 
+    printf("\033[30;47m\033[%d;16Hwinningtiles: %d, area - mines: %d ", size + 4, winningtiles, size * size - mines); //debugging
+
     restoreCursorLocation();
+
+    //area minus mines should be the amount of clear tiles
+    if (winningtiles == size * size - mines) {
+        gameVictory();
+    }
+}
+
+void restartGame() {
+    gameCleared = 1; //mark game as cleared to break out of gameInputs()
+
+    //free up memory before re-init
+    free(gridArr);
+    free(visited);
+
+    printf("\033[2J"); //erase screen
+    printf("\033[H"); //cursor to topleft
+    printf("\033[22;0;0m"); //reset styles
 }
 
 void printTileData() {
@@ -545,17 +617,20 @@ void printTileData() {
 }
 
 void printMines() {
-    counter = 0;
+    storeAndResetCursorLocation();
+
     for (int i = 0; i < size; ++i) {
         for (int j = 0; j < size; ++j) {
-            if (gridArr[counter] == 1) {
+            if (getCursorData() == 1) {
                 printf("\033[30m\033[%d;%dH[x]", i + 1, j * 3 + 1);
             }
-            counter++;
+            moveRight();
         }
-        printf("\n");
+        moveDown();
+        cursorcol = 0;
     }
-    printf("\033[%d;%dH", 1 + cursorrow, 2 + cursorcol * 3); //cursor to where it was
+    
+    restoreCursorLocation();
 }
 
 void printNumbers() {
@@ -574,11 +649,10 @@ void printNumbers() {
     }
 
     restoreCursorLocation();
-    //unrelated note: make all tiles get a data value that can be used to distinguish from unrevealed tiles; for victory check.
 }
 
 void printVisits() {
-    counter = 0;
+    int counter = 0;
     for (int i = 0; i < size; ++i) {
         for (int j = 0; j < size; ++j) {
             printf("\033[%d;%dH[%d]", i + 1, j * 3 + 1, visited[counter]);
