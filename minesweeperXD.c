@@ -33,6 +33,10 @@ void moveDown();
 void moveRight();
 void moveLeft();
 
+void storeAndResetCursorLocation();
+void restoreCursorLocation();
+int savecol = 0;
+int saverow = 0;
 void modifyCursorData(int);
 int getCursorData();
 
@@ -48,6 +52,9 @@ void revealNumber();
 void colorTileDark();
 
 void gameDefeat();
+void gameVictory();
+
+int checkForVictory();
 
 void printTileData();
 void printMines();
@@ -133,11 +140,7 @@ void initGrid() {
 }
 
 void assignNumbers() {
-    int savecol = cursorcol;
-    int saverow = cursorrow;
-
-    cursorcol = 0;
-    cursorrow = 0;
+    storeAndResetCursorLocation();
 
     for (int i = 0; i < size; ++i) {
         for (int j = 0; j < size; ++j) {
@@ -200,9 +203,7 @@ void assignNumbers() {
         cursorcol = 0;
     }
 
-    cursorcol = savecol;
-    cursorrow = saverow;
-    printf("\033[%d;%dH", 1 + cursorrow, 2 + cursorcol * 3);
+    restoreCursorLocation();
 }
 
 void gameInputs() {
@@ -210,7 +211,6 @@ void gameInputs() {
         if (_kbhit()) {
             move = _getch();
 
-            //let's implement up right down left as 1 2 3 4 for now
             switch (move) {
             case 'w': //up
                 moveUp();
@@ -240,7 +240,7 @@ void gameInputs() {
                 printTileData(); //debugging
                 break;
             case 'g':
-                printf("\033[30m%d\033[1D", getCursorData());
+                printf("\033[30m%d\033[1D", getCursorData()); //print data at cursor location
                 break;
             default:
                 break;
@@ -337,6 +337,20 @@ void moveLeft() {
     }
 }
 
+void storeAndResetCursorLocation() {
+    savecol = cursorcol;
+    saverow = cursorrow;
+
+    cursorcol = 0;
+    cursorrow = 0;
+}
+
+void restoreCursorLocation() {
+    cursorcol = savecol;
+    cursorrow = saverow;
+    printf("\033[%d;%dH", 1 + cursorrow, 2 + cursorcol * 3);
+}
+
 void modifyCursorData(int data) {
     gridArr[cursorcol + size * cursorrow] = data;
 }
@@ -367,6 +381,7 @@ int revealAdjacent() { //this needs to use recursion I think :D
         return;
     }
     modifyClearVisit(1); //mark current tile as visited
+    modifyCursorData(41); //mark tile for victory check
     colorTileDark();
 
     /*  this for loop switch structure should start the directional
@@ -421,37 +436,43 @@ int revealAdjacent() { //this needs to use recursion I think :D
 }
 
 void revealNumber() {
+    if (getCursorData() < 5 || getCursorData() > 40) { //tile is not a number or has already been cleared
+        return;
+    }
+
     if (getCursorData() >= 15) { //has mine nearby and is flagged
         modifyCursorData(getCursorData() / 3);
     }
     int realvalue = getCursorData() - 4;
 
+    modifyCursorData(getCursorData() * 10); //mark tile for victory check
+
     int colorvalue = 0;
     switch (realvalue)
     {
     case 1:
-        colorvalue = 94;
+        colorvalue = 27; //bright blue
         break;
     case 2:
-        colorvalue = 32;
+        colorvalue = 28; //green
         break;
     case 3:
-        colorvalue = 91;
+        colorvalue = 196; //bright red
         break;
     case 4:
-        colorvalue = 34;
+        colorvalue = 17; //dark blue
         break;
     case 5:
-        colorvalue = 31;
+        colorvalue = 88; //dark red
         break;
     case 6:
-        colorvalue = 36;
+        colorvalue = 30; //dark cyan
         break;
     case 7:
-        colorvalue = 30;
+        colorvalue = 16; //black
         break;
     case 8:
-        colorvalue = 37;
+        colorvalue = 244; //grey
         break;
     default:
         break;
@@ -460,15 +481,15 @@ void revealNumber() {
     colorTileDark();
 
     //\033[text  \033[background
-    printf("\033[30\033[48;5;250m");
-    printf("\033[1D\033[37m[\033[1;%dm%d\033[22;37m]\033[2D\033[47m", colorvalue, realvalue);
-    //                     ^        ^  ^           ^
-    //                     [        c  n           ]                     
+    //printf("\033[38;5;{ID}m\033[48;5;{ID}m");
+    printf("\033[1D\033[37m[\033[1m\033[38;5;%dm%d\033[22;37m]\033[2D\033[47m", colorvalue, realvalue);
+    //                     ^                  ^  ^           ^
+    //                     [                  c  n           ]                     
 }
 
 void colorTileDark() {
     //printf("\033[1D\033[30;100m[ ]\033[2D\033[47m");
-    printf("\033[1D\033[48;5;250m[ ]\033[2D\033[47m");
+    printf("\033[1D\033[48;5;253m   \033[2D\033[47m");
 }
 
 void gameDefeat() {
@@ -489,25 +510,38 @@ void gameDefeat() {
     }
 }
 
-void printTileData() {
-    int savecol = cursorcol;
-    int saverow = cursorrow;
+void gameVictory() {
 
-    cursorcol = 0;
-    cursorrow = 0;
+}
+
+int checkForVictory() {
+    storeAndResetCursorLocation();
 
     for (int i = 0; i < size; ++i) {
         for (int j = 0; j < size; ++j) {
-            printf("\033[%d;%dH[%d]", i + 1, j * 3 + 1, getCursorData());
+            printf("\033[30m\033[%d;%dH[%d]", i + 1, j * 3 + 1, getCursorData());
             moveRight();
         }
         moveDown();
         cursorcol = 0;
     }
 
-    cursorcol = savecol;
-    cursorrow = saverow;
-    printf("\033[%d;%dH", 1 + cursorrow, 2 + cursorcol * 3);
+    restoreCursorLocation();
+}
+
+void printTileData() {
+    storeAndResetCursorLocation();
+
+    for (int i = 0; i < size; ++i) {
+        for (int j = 0; j < size; ++j) {
+            printf("\033[30m\033[%d;%dH[%d]", i + 1, j * 3 + 1, getCursorData());
+            moveRight();
+        }
+        moveDown();
+        cursorcol = 0;
+    }
+
+    restoreCursorLocation();
 }
 
 void printMines() {
@@ -515,7 +549,7 @@ void printMines() {
     for (int i = 0; i < size; ++i) {
         for (int j = 0; j < size; ++j) {
             if (gridArr[counter] == 1) {
-                printf("\033[%d;%dH[x]", i + 1, j * 3 + 1);
+                printf("\033[30m\033[%d;%dH[x]", i + 1, j * 3 + 1);
             }
             counter++;
         }
@@ -525,24 +559,22 @@ void printMines() {
 }
 
 void printNumbers() {
-    int savecol = cursorcol;
-    int saverow = cursorrow;
+    storeAndResetCursorLocation();
 
-    counter = 0;
     for (int i = 0; i < size; ++i) {
         for (int j = 0; j < size; ++j) {
-            if (gridArr[counter] >= 5) {
-                printf("\033[%d;%dH[A]", i + 1, j * 3 + 1);
+            if (getCursorData() > 4) {
+                revealNumber();
+                //printf("\033[30m\033[%d;%dH[%d]", i + 1, j * 3 + 1, getCursorData()-4); //curiously enough this works fine while revealNumber() does some weird shit
             }
-            counter++;
+            moveRight();
         }
-        printf("\n");
+        moveDown();
+        cursorcol = 0;
     }
-    printf("\033[%d;%dH", 1 + cursorrow, 2 + cursorcol * 3); //cursor to where it was
 
-    cursorcol = savecol;
-    cursorrow = saverow;
-    printf("\033[%d;%dH", 1 + cursorrow, 2 + cursorcol * 3);
+    restoreCursorLocation();
+    //unrelated note: make all tiles get a data value that can be used to distinguish from unrevealed tiles; for victory check.
 }
 
 void printVisits() {
