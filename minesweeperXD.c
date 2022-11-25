@@ -26,7 +26,6 @@ int cursorcol = 0;
 int cursorrow = 0;
 
 void inputEnter();
-
 void inputFlag();
 
 void moveUp();
@@ -43,7 +42,6 @@ int getClearVisit();
 int revealAdjacent();
 int* visited;
 int firstrec = 0;
-int phase = 0;
 
 void revealNumber();
 
@@ -66,20 +64,12 @@ int main()
     #endif*/
 
     askSize();
-    //printf("size, mines: %d, %d\n", size, mines);
 
     initGrid();
 
     gameInputs();
 
-
-
-    while (1) {
-
-    }
-    printf("game has enede\n");
-    /*int amongus = 0;
-    scanf("%d", &amongus);*/
+    printf("Game has shut down unexpectedly");
     return 0;
 }
 
@@ -107,14 +97,9 @@ void initGrid() {
         printf("Unable to allocate memory\n");
     }
 
-    time_t t;
     //intialize rng
+    time_t t;
     srand((unsigned)time(&t));
-
-    ///* Print 5 random numbers from 0 to 49 */
-    //for (int i = 0; i < 200; i++) {
-    //    printf("%d\n", rand() % gridSize);
-    //}
 
     //create mines
     int random = 0;
@@ -378,24 +363,7 @@ int revealAdjacent() { //this needs to use recursion I think :D
     int savecol = cursorcol;
     int saverow = cursorrow;
 
-    //if (firstrec == 0)
-    //{
-    //    //visited = calloc(gridSize, sizeof(int)); // Creating enough space for 'n' integers.
-    //    //if (visited == NULL) {
-    //    //    printf("Unable to allocate memory\n");
-    //    //}
-
-    //    firstrec = 1;
-    //}
-
     if (getCursorData() != 0 || getCursorData() == 5 || getClearVisit() != 0) {
-        //printf("saasdidhsgjkidfhjgnlkmaaaaaaa"); //debug
-        //while(1){}
-
-        /*if ((cursorcol + size * cursorrow) == savecol + size * saverow) {
-            printf("AAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
-            while(1){}
-        }*/
         return;
     }
     modifyClearVisit(1); //mark current tile as visited
@@ -444,104 +412,6 @@ int revealAdjacent() { //this needs to use recursion I think :D
             }
         }
     }
-
-    ////this whole thing...
-    //if (cursorrow > 0) {
-    //    moveUp();
-    //    revealAdjacent();
-    //}
-    //if (cursorrow < size) {
-    //    moveDown();
-    //    revealAdjacent();
-    //}
-    //if (cursorcol < size) {
-    //    moveRight();
-    //    revealAdjacent();
-    //}
-    //if (cursorcol > 0) {
-    //    moveLeft();
-    //    revealAdjacent();
-    //}//...works for one "sector"
-
-
-    //debug
-    /*counter = 0;
-    for (int i = 0; i < size; ++i) {
-        for (int j = 0; j < size; ++j) {
-            printf("\033[%d;%dH[%d]", i + 1, j * 3 + 1, visited[counter]);
-            counter++;
-        }
-        printf("\n");
-    }
-    while (1) {}*/
-
-
-
-
-    /*//this works alone for checking up
-    if (cursorrow > 0) {
-        moveUp();
-        if (getCursorData() == 0) {
-            colorTileDark();
-            revealAdjacent();
-        }
-    }*/
-
-    /*
-    switch (phase)
-    {
-    case 0:
-        if (cursorrow > 0) {
-            moveUp();
-            if (getCursorData() == 0) {
-                colorTileDark();
-                revealAdjacent();
-            }
-            phase = 1;
-        }
-        break;
-
-    case 1:
-        if (cursorrow < size - 1) { //FIXME
-            moveDown();
-            if (getCursorData() == 0) {
-                colorTileDark();
-                revealAdjacent();
-            }
-            phase = 2;
-        }
-        break;
-
-    case 2:
-        break;
-
-    case 3:
-        break;
-
-    default:
-        break;
-    }
-    phase = 0;
-    */
-
-
-
-
-    /*
-    if (cursorrow < size - 1) { //FIXME
-        moveDown();
-        if (getCursorData() == 0) {
-            colorTileDark();
-            revealAdjacent();
-        }
-    }*/
-
-
-    /*
-    if (1) {
-        gridArr[cursorcol + size * cursorrow];
-    }
-    */
 
     cursorcol = savecol;
     cursorrow = saverow;
