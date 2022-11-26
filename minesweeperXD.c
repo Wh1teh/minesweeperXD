@@ -703,7 +703,7 @@ void printMines() {
 
 	for (int i = 0; i < size; ++i) {
 		for (int j = 0; j < size; ++j) {
-			if (getCursorData() == 1) {
+			if (getCursorData() == 1 || getCursorData() == 3) {
 				printf("\033[30m\033[%d;%dH[x]", i + 1, j * 3 + 1);
 			}
 			moveRight();
