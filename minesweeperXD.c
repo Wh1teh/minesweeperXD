@@ -116,6 +116,21 @@ void printVisits();
 
 int main()
 {
+#ifdef _WIN32
+	HANDLE hInput = GetStdHandle(STD_INPUT_HANDLE), hOutput = GetStdHandle(STD_OUTPUT_HANDLE);
+	DWORD dwMode;
+	GetConsoleMode(hOutput, &dwMode);
+	dwMode |= ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+	if (!SetConsoleMode(hOutput, dwMode)) {
+		printf("SetConsoleMode failed. Press any key to exit.");
+		while (!_kbhit()) {
+		}
+		return 0;
+	}
+#endif
+
+	
+
 	while (1)
 	{
 		askSize();
