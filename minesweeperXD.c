@@ -153,7 +153,7 @@ int main()
 void askSize() {
 	printf("give size(of one size): ");
 	scanf("%d", &size);
-	if (size > 20) size = 20;
+	if (size > 24) size = 24;
 
 	printf("how many mines: ");
 	scanf("%d", &mines);
