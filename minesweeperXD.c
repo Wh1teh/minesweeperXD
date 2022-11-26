@@ -63,6 +63,9 @@ void initGrid();
 int* gridArr;
 int* visited;
 
+void firstReveal();
+int firstreveal = 0;
+
 void assignNumbers();
 
 void gameInputs();
@@ -129,7 +132,9 @@ int main()
 	}
 #endif
 
-	
+	//intialize rng
+	time_t t;
+	srand((unsigned)time(&t));
 
 	while (1)
 	{
@@ -152,38 +157,23 @@ void askSize() {
 
 	printf("how many mines: ");
 	scanf("%d", &mines);
-	if (size * size < mines) mines = size * size;
+	if (size * size < mines + 9) mines = size * size - 9; //force room for starting tile reveal
 }
 
 void initGrid() {
 	int gridSize = size * size;
-	printf("grid size: %d\n", gridSize);
 
 	gridArr = calloc(gridSize, sizeof(int));
 	if (gridArr == NULL) {
 		printf("Unable to allocate memory\n");
+		while (1) {}
 	}
 
 	visited = calloc(gridSize, sizeof(int));
 	if (visited == NULL) {
 		printf("Unable to allocate memory\n");
+		while (1) {}
 	}
-
-	//intialize rng
-	time_t t;
-	srand((unsigned)time(&t));
-
-	//create mines
-	int random = 0;
-	for (int i = 0; i < mines; ++i) {
-		random = rand() % gridSize;
-		if (gridArr[random] == 1) { //check if position is already a mine
-			i--;
-		}
-		gridArr[random] = 1;
-	}
-
-	assignNumbers();
 
 	printf("\033[2J"); //erase screen
 	printf("\033[H"); //cursor to topleft
@@ -204,6 +194,28 @@ void initGrid() {
 	updateMineIndicator();
 
 	printf("\033[1;2H"); //cursor to first position
+}
+
+void firstReveal() {
+	int gridSize = size * size;
+
+	//create mines
+	int random = 0;
+	for (int i = 0; i < mines; ++i) {
+		random = rand() % gridSize;
+
+		//these are for checking surrounding tiles
+		int a = random - (cursorcol + size * (cursorrow - 1)); //top row
+		int b = random - (cursorcol + size * cursorrow); //mid row
+		int c = random - (cursorcol + size * (cursorrow + 1)); //bot row
+
+		if (gridArr[random] == 1 || (a >= -1 && a <= 1) || (b >= -1 && b <= 1) || (c >= -1 && c <= 1)) { //check if position is already a mine or is near current position
+			i--;
+		}
+		else gridArr[random] = 1;
+	}
+
+	assignNumbers();
 }
 
 void assignNumbers() {
@@ -294,9 +306,16 @@ void gameInputs() {
 				moveLeft();
 				break;
 			case 'e':
+				if (firstreveal == 0) {
+					firstReveal();
+					firstreveal = 1;
+				}
 				inputEnter();
 				break;
 			case 'f':
+				if (firstreveal == 0) {
+					break;
+				}
 				inputFlag();
 				break;
 			case 'r':
@@ -671,12 +690,12 @@ void restartGame() {
 
 void resetValues() {
 	gameCleared = 0;
+	flagcounter = 0;
+	firstreveal = 0;
 
 	//free up memory before re-init
 	free(gridArr);
 	free(visited);
-
-	flagcounter = 0;
 
 	printf("\033[22;0;0m"); //reset styles
 	printf("\033[2J"); //erase screen
