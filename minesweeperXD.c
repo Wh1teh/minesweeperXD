@@ -119,7 +119,7 @@ void printVisits();
 
 int main()
 {
-#ifdef _WIN32
+#ifdef _WIN32 //enable ansi escape codes for cmd
 	HANDLE hInput = GetStdHandle(STD_INPUT_HANDLE), hOutput = GetStdHandle(STD_OUTPUT_HANDLE);
 	DWORD dwMode;
 	GetConsoleMode(hOutput, &dwMode);
@@ -179,7 +179,7 @@ void initGrid() {
 	printf("\033[H"); //cursor to topleft
 
 	//\033[text  \033[background
-	printf("\033[30\033[48;5;255m");
+	printf("\033[38;5;249m\033[48;5;253m");
 
 	//prints the grid
 	for (int i = 0; i < size; ++i) {
@@ -605,8 +605,8 @@ void revealNumber() {
 }
 
 void colorTileDark() {
-	//printf("\033[1D\033[30;100m[ ]\033[2D\033[47m");
-	printf("\033[1D\033[48;5;252m   \033[2D\033[47m");
+	//printf("\033[1D\033[48;5;252m   \033[2D\033[47m");
+	printf("\033[1D\033[30;47m   \033[2D");
 }
 
 void gameDefeat() {
