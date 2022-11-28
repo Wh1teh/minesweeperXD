@@ -378,7 +378,7 @@ void inputEnter() {
 }
 
 void inputFlag() {
-	printf("\033[48;5;255m\033[31m"); //color
+	printf("\033[48;5;253m\033[31m"); //color
 	switch (getCursorData())
 	{
 	case 0: //clear
